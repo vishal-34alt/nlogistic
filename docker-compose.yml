@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+  # MySQL Database Service
+  db:
+    image: mysql:8.0
+    container_name: nlogistic-db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: n_logistic_test_db
+    command: >
+      --default-authentication-plugin=mysql_native_password
+      --log-bin-trust-function-creators=1
+      --character-set-server=utf8mb4
+      --collation-server=utf8mb4_unicode_ci
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./db/01_schema.sql:/docker-entrypoint-initdb.d/01_schema.sql:ro
+      - ./db/02_seed.sql:/docker-entrypoint-initdb.d/02_seed.sql:ro
+      - nlogistic_db_data:/var/lib/mysql
+
+  # Java Web Application Service (Tomcat 9)
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: nlogistic-app
+    restart: always
+    environment:
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_NAME: n_logistic_test_db
+      DB_USER: root
+      DB_PASSWORD: root
+    ports:
+      - "8080:8080"
+    depends_on:
+      - db
+
+volumes:
+  nlogistic_db_data:
